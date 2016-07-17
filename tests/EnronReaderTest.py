@@ -1,6 +1,6 @@
 import unittest
 
-from reader import EnronReader
+from reader.enron.EnronReader import EnronReader
 
 
 class EnronReaderTest(unittest.TestCase):

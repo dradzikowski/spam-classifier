@@ -1,8 +1,8 @@
-import logging
 import os
 
 import bs4
 
+import logging
 from config.constants import CORPUS_DIR, LOGS_DIR
 from reader.AbstractReader import AbstractReader
 

@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+from collections import defaultdict
 
 import bs4
 
@@ -14,7 +16,7 @@ SPAM_DIR = os.path.join(ENRON1_DIR, 'spam')
 LIMIT = 100
 
 logging.basicConfig(
-    filename=ENRON_LOG,
+    #filename=ENRON_LOG,
     level=logging.DEBUG,
     filemode='w',
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -23,26 +25,19 @@ logging.basicConfig(
 
 class EnronReader(AbstractReader):
     def read(self):
+        training_set = defaultdict(list)
         for label in os.listdir(ENRON1_DIR):
             label_dir = os.path.join(ENRON1_DIR, label)
             if os.path.isdir(label_dir):
                 for file in os.listdir(label_dir)[:LIMIT]:
-                    print(label + ": " + file)
+                    logging.debug("Reading email: [" + label + "] " + file)
                     file_dir = os.path.join(label_dir, file)
                     email_file = open(file_dir, 'r')
                     email_text = email_file.read()
                     email_file.close()
-                    print(email_text)
-                    try:
-                        email_text = bs4.UnicodeDammit.detwingle(email_text).decode('utf-8')
-                    except:
-                        msg = "Bad encoding: '{file}', skipping".format(file=file)
-                        logging.error(msg)
-                        print(msg)
-                        continue
-                    email_text = email_text.encode('ascii', 'ignore')
-                    print(label)
-                    print(email_text)
+                    training_set[label].append(email_text)
+        logging.debug("Training set: " + json.dumps(training_set, indent=4))
+        return training_set
 
 
 def main():

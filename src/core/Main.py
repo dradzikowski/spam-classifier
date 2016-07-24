@@ -1,5 +1,7 @@
 import logging
-from time import time
+import os
+import pickle
+import time
 
 import numpy
 from sklearn.cross_validation import KFold
@@ -9,10 +11,11 @@ from sklearn.metrics import f1_score
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
-from config.constants import PICKLE_DIR
 from preprocessor.DataFrameBuilder import DataFrameBuilder
 from reader.enron.EnronReader import EnronReader
 from reader.trec.TrecReader import TrecReader
+
+PICKLES_DIR = os.path.join('../pickles')
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,18 +27,23 @@ logging.basicConfig(
 class Main:
     @staticmethod
     def run():
-        data = self.prepare_data()
+        data = Main.prepare_data()
 
+        classifier = MultinomialNB()
+        ngram_range = (1, 2)
         pipeline = Pipeline([
-            ('vectorizer', CountVectorizer(ngram_range=(1, 2))),
+            ('vectorizer', CountVectorizer(ngram_range=ngram_range)),
             ('tfidf_transformer', TfidfTransformer()),
             # ('classifier', BernoulliNB())
-            ('classifier', MultinomialNB())
+            ('classifier', classifier)
         ])
+        Main.log_classification_parameters(ngram_range, pipeline)
+        logging.info("Data length: " + str(len(data)))
         k_fold = KFold(n=len(data), n_folds=6)
         scores = []
         confusion = numpy.array([[0, 0], [0, 0]])
         for train_indices, test_indices in k_fold:
+            logging.info("Training / test data: " + str(len(train_indices)) + " / " + str(len(test_indices)))
             train_features = data.iloc[train_indices]['email'].values
             train_lables = data.iloc[train_indices]['label'].values.astype(str)
 
@@ -44,18 +52,27 @@ class Main:
 
             # fit_transform - learns the vocabulary of the corpus and extracts word count features
             start_time = time.time()
-            logging.info("Started learning... " + start_time)
             pipeline.fit(train_features, train_lables)
             end_time = time.time()
-            logging.info("Learning took: " + end_time - start_time)
-            from sklearn.externals import joblib
-            joblib.dump(pipeline, PICKLE_DIR + end_time + '.pkl')
-            # clf = joblib.load('filename.pkl')
+            logging.info("Learning took: " + str(end_time - start_time) + " seconds")
 
             predictions = pipeline.predict(test_features)
 
-            confusion += confusion_matrix(test_labels, predictions)
+            matrix = confusion_matrix(test_labels, predictions)
+            logging.info(matrix)
+            confusion += matrix
             score = f1_score(test_labels, predictions, pos_label='spam')
+
+            if score > 0.92:
+                # save the classifier
+                with open(os.path.join(PICKLES_DIR, str(score)) + '.pkl', 'wb') as fid:
+                    pickle.dump(pipeline, fid)
+
+                    # load it again
+                    # with open('my_dumped_classifier.pkl', 'rb') as fid:
+                    #    gnb_loaded = pickle.load(fid)
+
+            logging.info("Partial score: " + str(score))
             scores.append(score)
 
         print('--------------------------------------')
@@ -65,8 +82,18 @@ class Main:
         print('Confusion matrix: \n' + str(confusion))
         print('--------------------------------------')
 
-    def run2(self):
-        data = self.prepare_data()
+    @staticmethod
+    def log_classification_parameters(ngram_range, pipeline):
+        logging.info("--------------------")
+        logging.info("Pipeline steps: ")
+        for step in pipeline.steps:
+            logging.info("Step: " + step.__str__())
+        logging.info("Ngram range: " + ngram_range.__str__())
+        logging.info("--------------------")
+
+    @staticmethod
+    def run2():
+        data = Main.prepare_data()
 
         count_vectorizer = CountVectorizer(ngram_range=(1, 2))
         counts = count_vectorizer.fit_transform(data['email'].values)
@@ -80,13 +107,15 @@ class Main:
         predictions = classifier.predict(example_counts)
         print(predictions)
 
-    def prepare_data(self):
+    @staticmethod
+    def prepare_data():
         reader = EnronReader()
-        generator = reader.read(100)
+        generator = reader.read(100) # todo
         generator2 = TrecReader().read()
         builder = DataFrameBuilder()
-        # data = builder.build([generator, generator2])
+        ## TODO removing stopswords, tokenizing, lemmatization, stemming
         data = builder.build([generator])
+        #TODO data = builder.build([generator, generator2])
         logging.debug(data.items)
         data = data.reindex(numpy.random.permutation(data.index))
         return data

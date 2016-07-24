@@ -1,3 +1,4 @@
+import logging
 import mimetypes
 
 from nltk import WordNetLemmatizer, re, PorterStemmer
@@ -7,6 +8,9 @@ from preprocessor.Token import Token
 
 
 class Preprocessor:
+    def __init__(self):
+        pass
+
     lemmatizer = WordNetLemmatizer()
     stemmer = PorterStemmer()
     link_pattern = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
@@ -38,11 +42,11 @@ class Preprocessor:
                 # features.append(porterStemmer.stem(token.translate(None, string.punctuation)).lower())
                 #  features.append(self.lemmatizer.lemmatize(token.translate(None, string.punctuation), 'v').lower())
             else:
-                #features.append(self.lemmatizer.lemmatize(token, 'v').lower())
+                # features.append(self.lemmatizer.lemmatize(token, 'v').lower())
                 features.append(self.stemmer.stem(token).lower())
                 #   features.append(self.lemmatizer.lemmatize(token.translate(None, string.punctuation), 'v').lower())
 
-        print(features)
+        logging.debug(features)
         return features
 
 

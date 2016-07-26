@@ -43,17 +43,20 @@ class Main:
         k_fold = KFold(n=len(data), n_folds=6)
         scores = []
         confusion = numpy.array([[0, 0], [0, 0]])
-        #### just for test
-        #pipeline_from_pickle = Main.read_pickle()
-        #### just for test
+        confusion = Main.perform_with_cross_validation(confusion, data, k_fold, pipeline, scores, load_from_pickle=True)
+        Main.log_results(confusion, data, scores)#, confusion_matrix)
+
+    @staticmethod
+    def perform_with_cross_validation(confusion, data, k_fold, pipeline, scores, load_from_pickle):
+        if load_from_pickle:
+            pipeline = Main.read_pickle()
         for train_indices, test_indices in k_fold:
-            Main.train(data, pipeline, test_indices, train_indices)
+            if not load_from_pickle:
+                Main.train(data, pipeline, test_indices, train_indices)
             test_features = data.iloc[test_indices]['email'].values
             test_labels = data.iloc[test_indices]['label'].values.astype(str)
             confusion = Main.test(confusion, pipeline, scores, test_features, test_labels)
-        Main.log_results(confusion, data, scores)#, confusion_matrix)
-
-
+        return confusion
 
     @staticmethod
     def test(confusion, pipeline, scores, test_features, test_labels):
@@ -81,13 +84,13 @@ class Main:
 
     @staticmethod
     def save_pickle(pipeline, score):
-        if score > 0.99:
+        if score > 0.9935:
             with open(os.path.join(PICKLES_DIR, str(score)) + '.pkl', 'wb') as fid:
                 pickle.dump(pipeline, fid)
 
     @staticmethod
     def read_pickle():
-        with open(os.path.join(PICKLES_DIR, '0.995305164319.pkl'), 'rb') as fid:
+        with open(os.path.join(PICKLES_DIR, '0.993612981184.pkl'), 'rb') as fid:
             loaded_pickle = pickle.load(fid)
         return loaded_pickle
 

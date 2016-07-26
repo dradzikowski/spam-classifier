@@ -10,6 +10,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
 
 from preprocessor.DataFrameBuilder import DataFrameBuilder
 from reader.enron.EnronReader import EnronReader
@@ -32,7 +33,7 @@ class Main:
         classifier = MultinomialNB()
         ngram_range = (1, 2)
         pipeline = Pipeline([
-            ('vectorizer', CountVectorizer(ngram_range=ngram_range)),
+            ('vectorizer', CountVectorizer(ngram_range=ngram_range, stop_words='english')),
             ('tfidf_transformer', TfidfTransformer()),
             # ('classifier', BernoulliNB())
             ('classifier', classifier)
@@ -42,44 +43,67 @@ class Main:
         k_fold = KFold(n=len(data), n_folds=6)
         scores = []
         confusion = numpy.array([[0, 0], [0, 0]])
+        #### just for test
+        #pipeline_from_pickle = Main.read_pickle()
+        #### just for test
         for train_indices, test_indices in k_fold:
-            logging.info("Training / test data: " + str(len(train_indices)) + " / " + str(len(test_indices)))
-            train_features = data.iloc[train_indices]['email'].values
-            train_lables = data.iloc[train_indices]['label'].values.astype(str)
-
+            Main.train(data, pipeline, test_indices, train_indices)
             test_features = data.iloc[test_indices]['email'].values
             test_labels = data.iloc[test_indices]['label'].values.astype(str)
+            confusion = Main.test(confusion, pipeline, scores, test_features, test_labels)
+        Main.log_results(confusion, data, scores)#, confusion_matrix)
 
-            # fit_transform - learns the vocabulary of the corpus and extracts word count features
-            start_time = time.time()
-            pipeline.fit(train_features, train_lables)
-            end_time = time.time()
-            logging.info("Learning took: " + str(end_time - start_time) + " seconds")
 
-            predictions = pipeline.predict(test_features)
 
-            matrix = confusion_matrix(test_labels, predictions)
-            logging.info(matrix)
-            confusion += matrix
-            score = f1_score(test_labels, predictions, pos_label='spam')
+    @staticmethod
+    def test(confusion, pipeline, scores, test_features, test_labels):
+        predictions = pipeline.predict(test_features)
+        matrix = confusion_matrix(test_labels, predictions)
+        logging.info(matrix)
+        confusion += matrix
+        score = f1_score(test_labels, predictions, pos_label='spam')
+        # confusion_matrix = confusion_matrix(test_labels, predictions)
+        Main.save_pickle(pipeline, score)
+        logging.info("Partial score: " + str(score))
+        scores.append(score)
+        return confusion
 
-            if score > 0.92:
-                # save the classifier
-                with open(os.path.join(PICKLES_DIR, str(score)) + '.pkl', 'wb') as fid:
-                    pickle.dump(pipeline, fid)
+    @staticmethod
+    def train(data, pipeline, test_indices, train_indices):
+        logging.info("Training / test data: " + str(len(train_indices)) + " / " + str(len(test_indices)))
+        train_features = data.iloc[train_indices]['email'].values
+        train_lables = data.iloc[train_indices]['label'].values.astype(str)
+        # fit_transform - learns the vocabulary of the corpus and extracts word count features
+        start_time = time.time()
+        pipeline.fit(train_features, train_lables)
+        end_time = time.time()
+        logging.info("Learning took: " + str(end_time - start_time) + " seconds")
 
-                    # load it again
-                    # with open('my_dumped_classifier.pkl', 'rb') as fid:
-                    #    gnb_loaded = pickle.load(fid)
+    @staticmethod
+    def save_pickle(pipeline, score):
+        if score > 0.99:
+            with open(os.path.join(PICKLES_DIR, str(score)) + '.pkl', 'wb') as fid:
+                pickle.dump(pipeline, fid)
 
-            logging.info("Partial score: " + str(score))
-            scores.append(score)
+    @staticmethod
+    def read_pickle():
+        with open(os.path.join(PICKLES_DIR, '0.995305164319.pkl'), 'rb') as fid:
+            loaded_pickle = pickle.load(fid)
+        return loaded_pickle
 
+    @staticmethod
+    def log_results(confusion, data, scores):#, confusion_matrix):
         print('--------------------------------------')
         # print classifier and settings
         print('Classified: ' + str(len(data)))
         print('Accuracy: ' + str(sum(scores) / len(scores)))
         print('Confusion matrix: \n' + str(confusion))
+        plt.matshow(confusion)
+        plt.title('Confusion matrix')
+        plt.colorbar()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+        plt.show()
         print('--------------------------------------')
 
     @staticmethod
@@ -110,12 +134,12 @@ class Main:
     @staticmethod
     def prepare_data():
         reader = EnronReader()
-        generator = reader.read(100) # todo
+        generator = reader.read(1000000) # todo
         generator2 = TrecReader().read()
         builder = DataFrameBuilder()
         ## TODO removing stopswords, tokenizing, lemmatization, stemming
         data = builder.build([generator])
-        #TODO data = builder.build([generator, generator2])
+        #data = builder.build([generator, generator2])
         logging.debug(data.items)
         data = data.reindex(numpy.random.permutation(data.index))
         return data

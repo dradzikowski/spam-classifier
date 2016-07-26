@@ -22,23 +22,28 @@ class Preprocessor:
         stemmer = PorterStemmer()
         print(" ".join([stemmer.stem(i) for i in sentence.split()]))
 
-    def extract_features(self, text):
+    def preprocess(self, text):
         features = []
         tokens = text.split()
-        tokens = [token for token in tokens if token not in stopwords.words("english")]
+        #tokens = [token for token in tokens if token not in stopwords.words("english")]
         for token in tokens:
             if len(token) < 3:
                 # if len(token.translate(None, string.punctuation)) < 3:
                 continue
             if token.isdigit():
-                features.append(Token.NUMBER)
+                features.append("NUMBER")
+                #features.append(Token.NUMBER)
             elif "." + token in mimetypes.types_map.keys():
-                features.append(Token.ATTACHMENT)
+                features.append("ATTACHMENT")
+                #features.append(Token.ATTACHMENT)
             elif self.link_pattern.match(token):
-                features.append(Token.LINK)
+                features.append("LINK")
+                #features.append(Token.LINK)
             elif token.upper() == token:
-                features.append(Token.CAPITAL_LETTERS)
-                features.append(self.lemmatizer.lemmatize(token, 'v').lower())
+                features.append("CAPITAL_LETTERS")
+                #features.append(Token.CAPITAL_LETTERS)
+                features.append(self.stemmer.stem(token).lower())
+                #features.append(self.lemmatizer.lemmatize(token, 'v').lower())
                 # features.append(porterStemmer.stem(token.translate(None, string.punctuation)).lower())
                 #  features.append(self.lemmatizer.lemmatize(token.translate(None, string.punctuation), 'v').lower())
             else:
@@ -46,13 +51,13 @@ class Preprocessor:
                 features.append(self.stemmer.stem(token).lower())
                 #   features.append(self.lemmatizer.lemmatize(token.translate(None, string.punctuation), 'v').lower())
 
-        logging.debug(features)
-        return features
+        #logging.debug(features)
+        return " ".join(features)
 
 
 def main():
     preprocessor = Preprocessor()
-    preprocessor.extract_features(
+    preprocessor.preprocess(
         "Elizabeth, New Jersey, when my mother was being raised there in a flat over her father’s grocery store, was an industrial "
         "port a quarter the size of Newark, dominated by the Irish working class and their politicians and the tightly knit parish "
         "life that revolved around the town’s many churches, and though I never heard her complain of having been pointedly ill-treated "

@@ -69,15 +69,7 @@ class Main:
     @staticmethod
     def test(confusion, pipeline, scores, test_features, test_labels, save_to_pickle):
         predictions = pipeline.predict(test_features)
-        j = 0
-        for i in range(len(predictions)):
-            if predictions[i] != test_labels[i]:
-                j += 1
-                logging.info("###################################################################################")
-                logging.info("--- (((" + str(j) + "))) --- was: " + test_labels[i] + ", predicted: " + predictions[i])
-                logging.info(test_features[i])
-                logging.info("###################################################################################")
-
+        Main.log_misclassified_emails(predictions, test_features, test_labels)
         matrix = confusion_matrix(test_labels, predictions)
         logging.info(matrix)
         confusion += matrix
@@ -88,6 +80,17 @@ class Main:
         logging.info("Partial score: " + str(score))
         scores.append(score)
         return confusion
+
+    @staticmethod
+    def log_misclassified_emails(predictions, test_features, test_labels):
+        j = 0
+        for i in range(len(predictions)):
+            if predictions[i] != test_labels[i]:
+                j += 1
+                logging.info("###################################################################################")
+                logging.info("--- (((" + str(j) + "))) --- was: " + test_labels[i] + ", predicted: " + predictions[i])
+                logging.info(test_features[i])
+                logging.info("###################################################################################")
 
     @staticmethod
     def train(data, pipeline, test_indices, train_indices):
@@ -159,8 +162,8 @@ class Main:
         generator2 = TrecReader().read()
         builder = DataFrameBuilder()
         ## TODO removing stopswords, tokenizing, lemmatization, stemming
-        data = builder.build([generator])
-        #data = builder.build([generator2])
+        #data = builder.build([generator])
+        data = builder.build([generator2])
         #data = builder.build([generator, generator2])
         logging.debug(data.items)
         data = data.reindex(numpy.random.permutation(data.index))

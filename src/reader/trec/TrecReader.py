@@ -28,17 +28,22 @@ class TrecReader(AbstractReader):
                     email_text = email_file.read()
                     email_message = email.message_from_string(email_text)
                     email_text = email_message.get_payload()
-                    if type(email_text) == list:
-                        pass
-                    #    for e in email_text:
-                    #        yield e, splitted_line[0], os.path.join(trec_data_dir, splitted_line[1])
-                    else:
-                        yield email_text, splitted_line[0], os.path.join(trec_data_dir, splitted_line[1])
+                    yield from self.yield_emails(email_text, splitted_line, trec_data_dir)
                 except UnicodeDecodeError as e:
                     print(e)
                     logging.warning("Bad encoding: " + str(e))
                 finally:
                     email_file.close()
+
+    def yield_emails(self, email_text, splitted_line, trec_data_dir):
+        if type(email_text) == list:
+            for email_text_part in email_text:
+                payload = email_text_part.get_payload()
+                self.yield_emails(payload, splitted_line, trec_data_dir)
+        # for e in email_text:
+        #        yield e, splitted_line[0], os.path.join(trec_data_dir, splitted_line[1])
+        else:
+            yield email_text, splitted_line[0], os.path.join(trec_data_dir, splitted_line[1])
 
 
 def main():

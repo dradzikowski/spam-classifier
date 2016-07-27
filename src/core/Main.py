@@ -12,13 +12,16 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
+from config.constants import LOGS_DIR
 from preprocessor.DataFrameBuilder import DataFrameBuilder
 from reader.enron.EnronReader import EnronReader
 from reader.trec.TrecReader import TrecReader
 
 PICKLES_DIR = os.path.join('../pickles')
+MAIN_LOG = os.path.join(LOGS_DIR, 'main.log')
 
 logging.basicConfig(
+    filename=MAIN_LOG,
     level=logging.DEBUG,
     filemode='w',
     format='%(message)s'
@@ -28,6 +31,8 @@ logging.basicConfig(
 class Main:
     @staticmethod
     def run():
+        logging.info("--------- Start time: " + time.strftime("%Y-%m-%d %H:%M:%S"))
+        start_time = time.time()
         data = Main.prepare_data()
 
         classifier = MultinomialNB()
@@ -43,8 +48,10 @@ class Main:
         k_fold = KFold(n=len(data), n_folds=6)
         scores = []
         confusion = numpy.array([[0, 0], [0, 0]])
-        confusion = Main.perform_with_cross_validation(confusion, data, k_fold, pipeline, scores, load_from_pickle=True)
-        Main.log_results(confusion, data, scores)#, confusion_matrix)
+        confusion = Main.perform_with_cross_validation(confusion, data, k_fold, pipeline, scores, load_from_pickle=False)
+        logging.info("--- Execution took: %s seconds ---" % (time.time() - start_time))
+        logging.info("--------- End time: " + time.strftime("%Y-%m-%d %H:%M:%S"))
+        Main.log_results(confusion, data, scores)  # , confusion_matrix)
 
     @staticmethod
     def perform_with_cross_validation(confusion, data, k_fold, pipeline, scores, load_from_pickle):
@@ -55,18 +62,29 @@ class Main:
                 Main.train(data, pipeline, test_indices, train_indices)
             test_features = data.iloc[test_indices]['email'].values
             test_labels = data.iloc[test_indices]['label'].values.astype(str)
-            confusion = Main.test(confusion, pipeline, scores, test_features, test_labels)
+            confusion = Main.test(confusion, pipeline, scores, test_features, test_labels,
+                                  save_to_pickle=not load_from_pickle)
         return confusion
 
     @staticmethod
-    def test(confusion, pipeline, scores, test_features, test_labels):
+    def test(confusion, pipeline, scores, test_features, test_labels, save_to_pickle):
         predictions = pipeline.predict(test_features)
+        j = 0
+        for i in range(len(predictions)):
+            if predictions[i] != test_labels[i]:
+                j += 1
+                logging.info("###################################################################################")
+                logging.info("--- (((" + str(j) + "))) --- was: " + test_labels[i] + ", predicted: " + predictions[i])
+                logging.info(test_features[i])
+                logging.info("###################################################################################")
+
         matrix = confusion_matrix(test_labels, predictions)
         logging.info(matrix)
         confusion += matrix
         score = f1_score(test_labels, predictions, pos_label='spam')
         # confusion_matrix = confusion_matrix(test_labels, predictions)
-        Main.save_pickle(pipeline, score)
+        if save_to_pickle:
+            Main.save_pickle(pipeline, score)
         logging.info("Partial score: " + str(score))
         scores.append(score)
         return confusion
@@ -95,7 +113,7 @@ class Main:
         return loaded_pickle
 
     @staticmethod
-    def log_results(confusion, data, scores):#, confusion_matrix):
+    def log_results(confusion, data, scores):  # , confusion_matrix):
         print('--------------------------------------')
         # print classifier and settings
         print('Classified: ' + str(len(data)))
@@ -137,11 +155,12 @@ class Main:
     @staticmethod
     def prepare_data():
         reader = EnronReader()
-        generator = reader.read(1000000) # todo
+        generator = reader.read(100)  # todo
         generator2 = TrecReader().read()
         builder = DataFrameBuilder()
         ## TODO removing stopswords, tokenizing, lemmatization, stemming
         data = builder.build([generator])
+        #data = builder.build([generator2])
         #data = builder.build([generator, generator2])
         logging.debug(data.items)
         data = data.reindex(numpy.random.permutation(data.index))

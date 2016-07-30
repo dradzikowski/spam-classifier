@@ -26,7 +26,7 @@ class Main:
 
         data = DataUtil.prepare_data()
         cls = classifier.Classifier()
-        cls.perform_with_cross_validation(data, load_from_pickle=False)
+        cls.perform_with_cross_validation(data, load_from_pickle=True)
 
         LoggingUtil.log_end_time(start_time)
 
@@ -35,19 +35,21 @@ class Main:
         start_time = LoggingUtil.log_start_time()
         data = DataUtil.prepare_data()
 
-        count_vectorizer = CountVectorizer(ngram_range=(1, 2))
-        counts = count_vectorizer.fit_transform(data['email'].values)
-        classifier = MultinomialNB()
-        targets = data['label'].values
-        classifier.fit(counts, targets)
+        cls = MultinomialNB()
+        vect = CountVectorizer(ngram_range=(1, 2))
+
+        train_labels = data['label'].values
+        train_features = vect.fit_transform(data['email'].values)
+        cls.fit(train_features, train_labels)
 
         examples = ['Congrats! Boss is proud of your promotion. Keep doing well. Regards.',
-                    'Congrats! You are lucky one to be offered a promotion!']
-        example_counts = count_vectorizer.transform(examples)
-        predictions = classifier.predict(example_counts)
+                    'Congrats! You are lucky one to be offered a promotion!',
+                    'Congrats! You are promoted!',
+                    'Congrats! You won one million!']
+        test_features = vect.transform(examples)
+        predictions = cls.predict(test_features)
 
-        logging.info(predictions)
-
+        print(predictions)
         LoggingUtil.log_end_time(start_time)
 
 

@@ -2,6 +2,7 @@ import logging
 import time
 
 import numpy
+from nltk import WordNetLemmatizer, word_tokenize
 from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -12,6 +13,12 @@ from sklearn.pipeline import Pipeline
 
 from utils import LoggingUtil
 from utils import PickleUtil
+
+class LemmaTokenizer(object):
+    def __init__(self):
+        self.wnl = WordNetLemmatizer()
+    def __call__(self, doc):
+        return [self.wnl.lemmatize(t) for t in word_tokenize(doc)]
 
 
 class Classifier(object):
@@ -35,8 +42,8 @@ class Classifier(object):
             test_features = data.iloc[test_indices]['email'].values
             test_labels = data.iloc[test_indices]['label'].values.astype(str)
             self.confusion = self.test(self.confusion, self.pipeline, self.scores, test_features, test_labels,
-                                  save_to_pickle=not load_from_pickle)
-        LoggingUtil.log_results(self.confusion, data, self.scores)  # , confusion_matrix)
+                                       save_to_pickle=not load_from_pickle)
+        LoggingUtil.log_results(self.confusion, data, self.scores)
 
     @staticmethod
     def test(confusion, pipeline, scores, test_features, test_labels, save_to_pickle):
@@ -46,7 +53,6 @@ class Classifier(object):
         logging.info(matrix)
         confusion += matrix
         score = f1_score(test_labels, predictions, pos_label='spam')
-        # confusion_matrix = confusion_matrix(test_labels, predictions)
         if save_to_pickle:
             PickleUtil.save_pickle(pipeline, score)
         logging.info("Partial score: " + str(score))
@@ -58,7 +64,6 @@ class Classifier(object):
         logging.info("Training / test data: " + str(len(train_indices)) + " / " + str(len(test_indices)))
         train_features = data.iloc[train_indices]['email'].values
         train_lables = data.iloc[train_indices]['label'].values.astype(str)
-        # fit_transform - learns the vocabulary of the corpus and extracts word count features
         start_time = time.time()
         pipeline.fit(train_features, train_lables)
         end_time = time.time()

@@ -1,5 +1,6 @@
 import logging
 import mimetypes
+import string
 
 from nltk import WordNetLemmatizer, re, PorterStemmer
 from nltk.corpus import stopwords
@@ -27,7 +28,7 @@ class Preprocessor:
         tokens = text.split()
         #tokens = [token for token in tokens if token not in stopwords.words("english")]
         for token in tokens:
-            if len(token) < 3:
+            if len(token.translate(string.punctuation)) < 3:
                 # if len(token.translate(None, string.punctuation)) < 3:
                 continue
             if token.isdigit():

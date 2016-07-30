@@ -12,7 +12,7 @@ class DataFrameBuilder:
         index = []
         for generator in generators:
             for email, label, file in generator:
-                self.preprocessor.preprocess(email)
+                #email = self.preprocessor.preprocess(email)
                 rows.append({'email': email, 'label': label})
                 index.append(file)
 

@@ -9,13 +9,11 @@ from reader.trec.TrecReader import TrecReader
 
 def prepare_data():
     reader = EnronReader()
-    generator = reader.read(100)  # todo
-    generator2 = TrecReader().read()
+    enronGenerator = reader.read(500)
+    trecGenerator = TrecReader().read(5000)
     builder = DataFrameBuilder()
-    ## TODO removing stopswords, tokenizing, lemmatization, stemming
-    data = builder.build([generator])
-    # data = builder.build([generator2])
-    # data = builder.build([generator, generator2])
+    #data = builder.build([trecGenerator])
+    data = builder.build([enronGenerator, trecGenerator])
     logging.debug(data.items)
     data = data.reindex(numpy.random.permutation(data.index))
     logging.info("Data length: " + str(len(data)))

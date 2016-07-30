@@ -6,9 +6,6 @@ from reader.AbstractReader import AbstractReader
 
 ENRON_LOG = os.path.join(LOGS_DIR, 'enron.log')
 ENRON_DIR = os.path.join(CORPUS_DIR, 'enron')
-#ENRON1_DIR = os.path.join(ENRON_DIR, 'enron1')
-#HAM_DIR = os.path.join(ENRON1_DIR, 'ham')
-#SPAM_DIR = os.path.join(ENRON1_DIR, 'spam')
 LIMIT = 100
 
 
@@ -16,12 +13,12 @@ class EnronReader(AbstractReader):
     def __init__(self):
         pass
 
-    def read(self, limit=LIMIT):
+    def read(self, limit_for_subdir=LIMIT):
         for enron_dir in os.listdir(ENRON_DIR):
             for label in os.listdir(os.path.join(ENRON_DIR, enron_dir)):
                 label_dir = os.path.join(os.path.join(ENRON_DIR, enron_dir), label)
                 if os.path.isdir(label_dir):
-                    for file in os.listdir(label_dir)[:limit]:
+                    for file in os.listdir(label_dir)[:limit_for_subdir]:
                         logging.debug("Reading email: [" + label + "] " + file)
                         file_dir = os.path.join(label_dir, file)
                         email_file = open(file_dir, 'r', encoding="iso-8859-1")

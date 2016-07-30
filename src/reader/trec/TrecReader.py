@@ -13,14 +13,14 @@ class TrecReader(AbstractReader):
     def __init__(self):
         pass
 
-    def read(self):
+    def read(self, limit=LIMIT):
         for trec_dir in os.listdir(TREC_DIR):
             trec_dir_path = os.path.join(TREC_DIR, trec_dir)
             trec_full_dir = os.path.join(trec_dir_path, 'full')
             trec_data_dir = os.path.join(trec_dir_path, 'data')
             index_file = os.path.join(trec_full_dir, 'index')
             index = open(index_file, 'r', encoding="iso-8859-1")
-            for line in index.readlines():
+            for line in index.readlines()[:limit]:
                 splitted_line = line.split()
                 email_file = open(os.path.join(trec_data_dir, splitted_line[1]), 'r', encoding="iso-8859-1")
                 try:

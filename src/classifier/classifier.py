@@ -14,6 +14,11 @@ from sklearn.pipeline import Pipeline
 from utils import LoggingUtil
 from utils import PickleUtil
 
+from classifier import BagOfWordsClassifier
+from classifier import BigramCountsClassifier
+from classifier import BigramFrequenciesClassifier
+from classifier import BigramOccurrencesClassifier
+
 class LemmaTokenizer(object):
     def __init__(self):
         self.wnl = WordNetLemmatizer()
@@ -22,12 +27,7 @@ class LemmaTokenizer(object):
 
 
 class Classifier(object):
-    pipeline = Pipeline([
-        ('vectorizer', CountVectorizer(ngram_range=(1, 2), stop_words='english')),
-        ('tfidf_transformer', TfidfTransformer()),
-        # ('classifier', BernoulliNB())
-        ('classifier', MultinomialNB())
-    ])
+    pipeline = BigramOccurrencesClassifier.get()
     confusion = numpy.array([[0, 0], [0, 0]])
     scores = []
 

@@ -26,7 +26,7 @@ class Main:
 
         data = DataUtil.prepare_data()
         cls = classifier.Classifier()
-        cls.perform_with_cross_validation(data, load_from_pickle=True)
+        cls.perform_with_cross_validation(data, load_from_pickle=False)
 
         LoggingUtil.log_end_time(start_time)
 

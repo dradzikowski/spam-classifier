@@ -9,7 +9,7 @@ from reader.trec.TrecReader import TrecReader
 
 def prepare_data():
     reader = EnronReader()
-    enronGenerator = reader.read(500000)
+    enronGenerator = reader.read(10000000)
     trecGenerator = TrecReader().read(5000)
     builder = DataFrameBuilder()
     data = builder.build([enronGenerator])

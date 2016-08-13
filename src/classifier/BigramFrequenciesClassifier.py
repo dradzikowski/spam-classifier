@@ -8,5 +8,5 @@ def get():
     return Pipeline([
         ('vectorizer', CountVectorizer(ngram_range=(1, 2), stop_words='english')),
         ('tfidf_transformer', TfidfTransformer()),
-        ('classifier', MultinomialNB())
+        ('classifier', MultinomialNB(class_prior=[.15, .85]))
     ])

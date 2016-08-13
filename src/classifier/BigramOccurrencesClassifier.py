@@ -6,5 +6,5 @@ from sklearn.pipeline import Pipeline
 def get():
     return Pipeline([
         ('vectorizer', CountVectorizer(ngram_range=(1, 2), stop_words='english')),
-        ('classifier', BernoulliNB(binarize=0.0))
+        ('classifier', BernoulliNB(binarize=0.0, class_prior=[.4, .6]))
     ])

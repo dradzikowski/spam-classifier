@@ -12,7 +12,7 @@ from utils import LoggingUtil
 MAIN_LOG = os.path.join(LOGS_DIR, 'main.log')
 
 logging.basicConfig(
-    filename=MAIN_LOG,
+    #filename=MAIN_LOG,
     level=logging.DEBUG,
     filemode='w',
     format='%(message)s'
